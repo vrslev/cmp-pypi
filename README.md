@@ -1,34 +1,33 @@
 # cmp-pypi
 
-This is an additional source for [nvim-cmp](https://github.com/hrsh7th/nvim-cmp), it allows you to
-autocomplete [pypi](https://pypi.org/) packages and its versions.
-The source is only active if you're in a `pyproject.toml` file.
-
-TODO: Demo
+Complete versions of dependencies in `pyproject.toml`. Works with Neovim and [nvim-cmp](https://github.com/hrsh7th/nvim-cmp).
 
 ## Installation
 
-TODO: You have to get treesitter plugin and nvim-cmp
+Requires:
 
-```
+- Neovim >=0.9.0
+- curl on your system
+- TOML tree-sitter parser (via [nvim-treesitter/nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter))
+
+Install with [Lazy](https://github.com/folke/lazy.nvim):
+
+```lua
 {
   "vrslev/cmp-pypi",
-  dependencies = { 'nvim-lua/plenary.nvim' },
+  dependencies = { "nvim-lua/plenary.nvim" },
   ft = "toml",
 }
 ```
 
-Run the `setup` function and add the source
+And add the source:
+
 ```lua
 cmp.setup({
   ...,
   sources = {
-    { name = 'pypi', keyword_length = 4 },
+    { name = "pypi", keyword_length = 4 },
     ...
   }
 })
 ```
-
-## Limitations
-TODO
-The versions are not correctly sorted (depends on `nvim-cmp`'s sorting algorithm).
