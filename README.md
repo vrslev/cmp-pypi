@@ -2,6 +2,8 @@
 
 Complete versions of dependencies in `pyproject.toml`. Works with Neovim and [nvim-cmp](https://github.com/hrsh7th/nvim-cmp).
 
+![preview](https://github.com/vrslev/cmp-pypi/assets/75225148/b64b69dd-651f-40a7-8955-2f772ef1b62d)
+
 ## Installation
 
 Requires:
