@@ -18,7 +18,7 @@ end
 
 ---@return string[]
 function source:get_trigger_characters()
-	return { "=", "." }
+	return { "=", ".", "^", "~" }
 end
 
 ---@param params cmp.SourceCompletionApiParams
@@ -34,7 +34,11 @@ function source:complete(params, callback)
 	local name, _ = string.match(line, '([^"]+)==([^"=]*)$')
 
 	if not name then
-		return callback()
+		name, _ = string.match(line, '^([^= ]+)%s?=%s?"([^"]*)$')
+
+		if not name then
+			return callback()
+		end
 	end
 
 	vim.schedule(function()

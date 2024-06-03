@@ -12,25 +12,37 @@ local function is_correct_node(node, buf)
 
 	node = node:parent()
 
-	if node:type() ~= "array" then
+	if node:type() ~= "array" and node:type() ~= "pair" then
 		return
 	end
 
-	node = node:parent()
+	if node:type() == "array" then
+		node = node:parent()
 
-	if node:type() ~= "pair" then
-		return
-	end
+		if node:type() ~= "pair" then
+			return
+		end
 
-	node = node:named_child()
+		node = node:named_child()
 
-	if node == nil then
-		return
-	end
+		if node == nil then
+			return
+		end
 
-	local key_text = vim.treesitter.get_node_text(node, buf)
-	if key_text ~= "dependencies" then
-		return
+		local key_text = vim.treesitter.get_node_text(node, buf)
+		if key_text ~= "dependencies" then
+			return
+		end
+	else
+		node = node:parent()
+
+		if node:type() ~= "table" then
+			return
+		end
+
+		if not string.find(vim.treesitter.get_node_text(node, buf), "dependencies") then
+			return
+		end
 	end
 
 	return true
