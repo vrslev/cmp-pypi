@@ -48,28 +48,10 @@ local function is_correct_node(node, buf)
 	return true
 end
 
----@param node TSNode|nil
----@param buf integer
----@returns boolean
-local function has_correct_string(node, buf)
-	if node == nil then
-		return
-	end
-
-	local string_text = vim.treesitter.get_node_text(node, buf)
-	if not string_text:match('=="$') then
-		return
-	end
-
-	-- vim.treesitter.
-	return true
-end
-
 local function should_complete()
 	local node = vim.treesitter.get_node()
 	local buf = vim.api.nvim_get_current_buf()
 	return is_correct_node(node, buf)
-	-- return is_correct_node(node, buf) and has_correct_string(node, buf)
 end
 
 ---@type { [string]: lsp.CompletionResponse|nil }
