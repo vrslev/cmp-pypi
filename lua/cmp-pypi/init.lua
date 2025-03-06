@@ -32,11 +32,11 @@ function source:complete(params, callback)
 	local line = params.context.cursor_before_line
 
 	-- `package == version` for 0 to any number of spaces
-	local name, _ = string.match(line, '([^" ]+) *== *([^"= ]*)$')
-	
+	local name, _ = string.match(line, '([^" ]+)%s==%s([^"= ]*)$')
+
 	if not name then
 		-- `package = "version"` for 0 to any number of spaces
-		name, _ = string.match(line, '^([^= ]+) *= *"([^"]*)$')
+		name, _ = string.match(line, '^([^= ]+)%s=%s"([^"]*)$')
 
 		if not name then
 			return callback()
