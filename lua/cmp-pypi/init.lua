@@ -33,11 +33,11 @@ end
 function source:complete(params, callback)
 	local core = require("cmp-pypi.core")
 
-	local line = params.context.cursor_before_line
-
 	if not core.should_complete() then
 		return callback()
 	end
+
+	local line = params.context.cursor_before_line
 
 	-- `package == version` for 0 to any number of spaces
 	local name, _ = string.match(line, '([%w_%-]+)%s*==%s*([^"= ]*)$')
