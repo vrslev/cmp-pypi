@@ -3,73 +3,102 @@
 ---@returns boolean
 local function is_correct_node(node, buf)
 	if node == nil then
-		return
+		return false
 	end
 
-	if node:type() ~= "string" then
-		return
-	end
-
-	node = node:parent()
-
-	if node:type() ~= "array" and node:type() ~= "pair" then
-		return
-	end
-
-	if node:type() == "array" then
-		node = node:parent()
-
-		if node:type() ~= "pair" then
-			return
+	-- Case 1:
+	-- | [project]
+	-- | dependencies = [
+	-- |     "<package> *== *<version>",
+	-- | ]
+	--             OR
+	-- | [project.optional-dependencies]
+	-- | my-extras = [
+	-- |     "<package> *== *<version>",
+	-- | ]
+	-- This also catches when the "<package> *== *<version>" string is not closed
+	repeat
+		if node:type() ~= "string" and node:type() ~= "ERROR" then
+			break
 		end
 
-		node = node:named_child()
-
-		if node == nil then
-			return
+		local parent = node:parent()
+		if parent:type() ~= "array" then
+			break
 		end
 
-		local key_text = vim.treesitter.get_node_text(node, buf)
-		if key_text ~= "dependencies" then
-			return
+		local grandparent = parent:parent()
+		if grandparent:type() ~= "pair" then
+			break
 		end
-	else
-		node = node:parent()
+		local grandparent_name = vim.treesitter.get_node_text(grandparent:named_child(), buf)
 
-		if node:type() ~= "table" then
-			return
+		local greatgrandparent = grandparent:parent()
+		if greatgrandparent:type() ~= "table" then
+			break
+		end
+		local greatgrandparent_name = vim.treesitter.get_node_text(greatgrandparent:named_child(), buf)
+
+		if not string.find(greatgrandparent_name, "project") then
+			break
+		end
+		if not string.find(grandparent_name, "dependencies") then
+			if not string.find(greatgrandparent_name, "dependencies") then
+				break
+			end
 		end
 
-		if not string.find(vim.treesitter.get_node_text(node, buf), "dependencies") then
-			return
+		return true
+	until true
+
+	-- Case 2:
+	-- | [table.name.containing.dependencies]
+	-- | <package> *= *"<version>"
+	-- This also catches when the "<version>" string is not closed
+	repeat
+		if node:type() == "ERROR" then
+
+			local last_sibling = node:prev_sibling()
+			if last_sibling:type() ~= "table" then
+				break
+			end
+			local last_sibling_name = vim.treesitter.get_node_text(last_sibling:named_child(), buf)
+			if not string.find(last_sibling_name, "dependencies") then
+				break
+			end
+
+			return true
+
 		end
-	end
 
-	return true
-end
+		if node:type() ~= "string" then
+			break
+		end
 
----@param node TSNode|nil
----@param buf integer
----@returns boolean
-local function has_correct_string(node, buf)
-	if node == nil then
-		return
-	end
+		local parent = node:parent()
+		if parent:type() ~= "pair" then
+			break
+		end
 
-	local string_text = vim.treesitter.get_node_text(node, buf)
-	if not string_text:match('=="$') then
-		return
-	end
+		local grandparent = parent:parent()
+		if grandparent:type() ~= "table" then
+			break
+		end
+		local grandparent_name = vim.treesitter.get_node_text(grandparent:named_child(), buf)
+		if not string.find(grandparent_name, "dependencies") then
+			break
+		end
 
-	-- vim.treesitter.
-	return true
+		return true
+	until true
+
+	return false
 end
 
 local function should_complete()
 	local node = vim.treesitter.get_node()
 	local buf = vim.api.nvim_get_current_buf()
 	return is_correct_node(node, buf)
-	-- return is_correct_node(node, buf) and has_correct_string(node, buf)
 end
 
 ---@type { [string]: lsp.CompletionResponse|nil }

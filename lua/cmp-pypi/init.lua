@@ -18,23 +18,33 @@ end
 
 ---@return string[]
 function source:get_trigger_characters()
-	return { "=", ".", "^", "~" }
+	return {
+		-- Part way through a version
+		".", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+		-- Case 1
+		"=", " ",
+		-- Case 2
+		"^", "~", "\"",
+	}
 end
 
 ---@param params cmp.SourceCompletionApiParams
 ---@param callback fun(response: lsp.CompletionResponse|nil)
 function source:complete(params, callback)
 	local core = require("cmp-pypi.core")
+
 	if not core.should_complete() then
 		return callback()
 	end
 
 	local line = params.context.cursor_before_line
 
-	local name, _ = string.match(line, '([^"]+)==([^"=]*)$')
+	-- `package == version` for 0 to any number of spaces
+	local name, _ = string.match(line, '([%w_%-]+)%s*==%s*([^"= ]*)$')
 
 	if not name then
-		name, _ = string.match(line, '^([^= ]+)%s?=%s?"([^"]*)$')
+		-- `package = "version"` for 0 to any number of spaces
+		name, _ = string.match(line, '^([%w_%-]+)%s*=%s*"([^"]*)$')
 
 		if not name then
 			return callback()
