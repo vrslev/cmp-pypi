@@ -1,3 +1,5 @@
+local PriorityQueue = require("cmp-pypi.priority_queue")
+
 ---@param node TSNode|nil
 ---@param buf integer
 ---@returns boolean
@@ -104,66 +106,21 @@ end
 ---@type { [string]: lsp.CompletionResponse|nil }
 local cmp_cache = {}
 
-local function split_by_period(input_string)
-    local parts = {}
-    for part in string.gmatch(input_string, "[^.]+") do
-        table.insert(parts, part)
-    end
-    return parts
-end
+local function versions_sorted_by_upload_date_descending(releases)
+    local pq = PriorityQueue("max")
 
-local function version_sorter(v1, v2)
-
-    local p1 = split_by_period(v1)
-    local p2 = split_by_period(v2)
-
-    local max_len = math.max(#p1, #p2)
-
-    for i = 1, max_len do
-        -- Try to convert to number
-        local part1 = tonumber(p1[i])
-        local part2 = tonumber(p2[i])
-
-        -- If one can't be interpreted as an integer, assume the other is bigger
-        if (not part1) and part2 then
-            return true
-        end
-        if part1 and (not part2) then
-            return false
-        end
-
-        -- Use both as strings if neither can be integers
-        part1 = p1[i]
-        part2 = p2[i]
-
-        -- If one is shorter than the other, consider the longer one to be bigger
-        if (not part1) and part2 then
-            return true
-        end
-        if part1 and (not part2) then
-            return false
-        end
-
-        -- Compare
-        if part1 < part2 then
-            return true
-        elseif part1 > part2 then
-            return false
+    for version, releases_list in pairs(releases) do
+        if type(releases_list) == "table" then
+            for _, release_info in ipairs(releases_list) do
+                if type(release_info) == "table" and release_info.upload_time_iso_8601 then
+                    pq:enqueue(version, release_info.upload_time_iso_8601)
+                    break
+                end
+            end
         end
     end
 
-    return false
-end
-
-local function iter_sorted_by_key(t)
-	local i = {}
-	for k in next, t do
-		table.insert(i, k)
-	end
-	table.sort(i, version_sorter)
-	return function()
-		return table.remove(i)
-	end
+    return pq
 end
 
 ---@name string|nil
@@ -175,21 +132,24 @@ local function complete(name)
 
 	local response = require("plenary.curl").get(
 		("https://pypi.org/pypi/%s/json"):format(name),
-		{ headers = {
-			content_type = "application/json",
-		} }
+		{
+            headers = {
+			    content_type = "application/json",
+		    },
+        }
 	)
 
 	local res_json = vim.fn.json_decode(response.body)
-	if res_json == nil or res_json.releases == nil then
+	if res_json == nil or res_json.releases == nil or type(res_json.releases) ~= "table" then
 		return
 	end
 
+    local versions_by_date = versions_sorted_by_upload_date_descending(res_json.releases)
+
 	local result = {}
-	local i = 0
-	for version in iter_sorted_by_key(res_json.releases) do
+    for i = 1, #versions_by_date do
+        local version = versions_by_date:dequeue()
 		table.insert(result, { label = version, sortText = string.format("%04d", i) })
-		i = i + 1
 	end
 
 	cmp_cache[name] = result
