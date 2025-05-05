@@ -107,20 +107,20 @@ end
 local cmp_cache = {}
 
 local function versions_sorted_by_upload_date_descending(releases)
-    local pq = PriorityQueue("max")
+	local pq = PriorityQueue("max")
 
-    for version, releases_list in pairs(releases) do
-        if type(releases_list) == "table" then
-            for _, release_info in ipairs(releases_list) do
-                if type(release_info) == "table" and release_info.upload_time_iso_8601 then
-                    pq:enqueue(version, release_info.upload_time_iso_8601)
-                    break
-                end
-            end
-        end
-    end
+	for version, releases_list in pairs(releases) do
+		if type(releases_list) == "table" then
+			for _, release_info in ipairs(releases_list) do
+				if type(release_info) == "table" and release_info.upload_time_iso_8601 then
+					pq:enqueue(version, release_info.upload_time_iso_8601)
+					break
+				end
+			end
+		end
+	end
 
-    return pq
+	return pq
 end
 
 ---@name string|nil
@@ -133,10 +133,10 @@ local function complete(name)
 	local response = require("plenary.curl").get(
 		("https://pypi.org/pypi/%s/json"):format(name),
 		{
-            headers = {
-			    content_type = "application/json",
-		    },
-        }
+			headers = {
+				content_type = "application/json",
+			},
+		}
 	)
 
 	local res_json = vim.fn.json_decode(response.body)
@@ -144,11 +144,11 @@ local function complete(name)
 		return
 	end
 
-    local versions_by_date = versions_sorted_by_upload_date_descending(res_json.releases)
+	local versions_by_date = versions_sorted_by_upload_date_descending(res_json.releases)
 
 	local result = {}
-    for i = 1, #versions_by_date do
-        local version = versions_by_date:dequeue()
+	for i = 1, #versions_by_date do
+		local version = versions_by_date:dequeue()
 		table.insert(result, { label = version, sortText = string.format("%04d", i) })
 	end
 
