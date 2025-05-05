@@ -104,12 +104,57 @@ end
 ---@type { [string]: lsp.CompletionResponse|nil }
 local cmp_cache = {}
 
-local function sorted_iter_by_key(t)
+local function split_by_period(input_string)
+    local parts = {}
+    for part in string.gmatch(input_string, "[^.]+") do
+        table.insert(parts, part)
+    end
+    return parts
+end
+
+local function version_sorter(v1, v2)
+
+    local p1 = split_by_period(v1)
+    local p2 = split_by_period(v2)
+
+    local max_len = math.max(#p1, #p2)
+
+    for i = 1, max_len do
+        -- Try to convert to number
+        local part1 = tonumber(p1[i])
+        local part2 = tonumber(p2[i])
+
+        -- Use strings in comparison if either can't be a number
+        if (not part1) or (not part2) then
+            part1 = p1[i]
+            part2 = p2[i]
+        end
+
+        -- If one is shorter than the other, consider the longer one to be bigger
+        if (not part1) and part2 then
+            return true
+        end
+        if part1 and (not part2) then
+            return false
+        end
+
+        -- Compare
+        if part1 < part2 then
+            return true
+        elseif part1 > part2 then
+            return false
+        end
+    end
+
+    return false
+end
+
+local function iter_sorted_by_key(t)
 	local i = {}
 	for k in next, t do
 		table.insert(i, k)
 	end
-	table.sort(i)
+	table.sort(i, version_sorter)
 	return function()
 		return table.remove(i)
 	end
@@ -136,7 +181,7 @@ local function complete(name)
 
 	local result = {}
 	local i = 0
-	for version in sorted_iter_by_key(res_json.releases) do
+	for version in iter_sorted_by_key(res_json.releases) do
 		table.insert(result, { label = version, sortText = string.format("%04d", i) })
 		i = i + 1
 	end
