@@ -124,11 +124,17 @@ local function version_sorter(v1, v2)
         local part1 = tonumber(p1[i])
         local part2 = tonumber(p2[i])
 
-        -- Use strings in comparison if either can't be a number
-        if (not part1) or (not part2) then
-            part1 = p1[i]
-            part2 = p2[i]
+        -- If one can't be interpreted as an integer, assume the other is bigger
+        if (not part1) and part2 then
+            return true
         end
+        if part1 and (not part2) then
+            return false
+        end
+
+        -- Use both as strings if neither can be integers
+        part1 = p1[i]
+        part2 = p2[i]
 
         -- If one is shorter than the other, consider the longer one to be bigger
         if (not part1) and part2 then
