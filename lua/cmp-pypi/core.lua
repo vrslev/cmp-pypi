@@ -97,6 +97,9 @@ local function is_correct_node(node, buf)
 	return false
 end
 
+---@param str string
+---@param offset integer
+---@return { [string]: integer }|nil
 local function parse_python_version(str, offset)
 	local ret = nil
 	str = str:gsub("%s+", "")
@@ -109,20 +112,24 @@ local function parse_python_version(str, offset)
 	return ret
 end
 
+---@param str string
+---@return { [string]: integer }|nil
 local function parse_pyproject_python_version(str)
 	return parse_python_version(str, 1)
 end
 
+---@param str string
+---@return { [string]: integer }|nil
 local function parse_pypi_package_python_version(str)
 	return parse_python_version(str, 0)
 end
 
----@type { [string]: lsp.CompletionResponse|nil }
-local var_cache = {}
+---@type { [string]: integer }|nil
+local requires_python_cache = nil
 
 local function get_requires_python(node, buf)
-	if var_cache["requires-python"] then
-		return var_cache["requires-python"]
+	if requires_python_cache then
+		return requires_python_cache
 	end
 	local tree_root = node:tree():root()
 	local python_version_query = vim.treesitter.query.parse("toml", [[
@@ -138,10 +145,10 @@ local function get_requires_python(node, buf)
 	for id, requires_node, _ in python_version_query:iter_captures(tree_root, buf) do
 		if id == 2 then
 			local raw_text = vim.treesitter.get_node_text(requires_node, buf)
-			var_cache["requires-python"] = parse_pyproject_python_version(raw_text)
+			requires_python_cache = parse_pyproject_python_version(raw_text)
 		end
 	end
-	return var_cache["requires-python"]
+	return requires_python_cache
 end
 
 ---@type { [string]: lsp.CompletionResponse|nil }
@@ -185,7 +192,9 @@ local function versions_sorted_by_upload_date_descending(releases, node, buf)
 	return pq
 end
 
----@name string|nil
+---@param name string
+---@param node TSNode|nil
+---@param buf integer
 ---@returns lsp.CompletionResponse|nil
 local function complete(name, node, buf)
 	if cmp_cache[name] then
