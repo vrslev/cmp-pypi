@@ -158,17 +158,18 @@ local function versions_sorted_by_upload_date_descending(releases, node, buf)
 					if release_info.requires_python and release_info.requires_python ~= vim.NIL then
 						package_python = parse_pypi_package_python_version(release_info.requires_python)
 					end
-					local skip = false
-					skip = skip or release_info.yanked
 					local requires_python = get_requires_python(node, buf)
-					skip = skip or (
-						package_python ~= nil
-						and requires_python ~= nil
-						and (
-							package_python.major > requires_python.major
-							or (
-								package_python.major == requires_python.major
-								and package_python.minor > requires_python.minor
+					local skip = (
+						release_info.yanked
+						or (
+							package_python ~= nil
+							and requires_python ~= nil
+							and (
+								package_python.major > requires_python.major
+								or (
+									package_python.major == requires_python.major
+									and package_python.minor > requires_python.minor
+								)
 							)
 						)
 					)
