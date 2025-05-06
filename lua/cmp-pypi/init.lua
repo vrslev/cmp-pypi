@@ -33,7 +33,10 @@ end
 function source:complete(params, callback)
 	local core = require("cmp-pypi.core")
 
-	if not core.should_complete() then
+	local node = vim.treesitter.get_node()
+	local buf = vim.api.nvim_get_current_buf()
+
+	if not core.is_correct_node(node, buf) then
 		return callback()
 	end
 
@@ -52,7 +55,7 @@ function source:complete(params, callback)
 	end
 
 	vim.schedule(function()
-		local result = core.complete(name)
+		local result = core.complete(name, node, buf)
 		callback(result)
 	end)
 end
